@@ -1,0 +1,28 @@
+﻿/* CSS Document */
+
+.minibanner-red { background: #a90101; }
+.minibanner-white { background: #fff; }
+.minibanner-gray { background: #707070; }
+.minibanner-gradient { background: url(../images/minibanner/minibanner-gradient.gif) repeat-x; }
+.minibanner-red ul li.nci a, .minibanner-white ul li.nci a, .minibanner-gray ul li.nci a, .minibanner-gradient ul li.nci a { display: block; height: 40px; text-indent: -3000px; }
+.minibanner-red ul li.nih a, .minibanner-white ul li.nih a, .minibanner-gray ul li.nih a, .minibanner-gradient ul li.nih a { display: block; height: 40px; text-indent: -3000px; }
+.minibanner-red ul li.cancergov a, .minibanner-white ul li.cancergov a, .minibanner-gray ul li.cancergov a, .minibanner-gradient ul li.cancergov a { display: block; height: 40px; text-indent: -3000px; }
+.minibanner-red ul, .minibanner-white ul, .minibanner-gray ul, .minibanner-gradient ul { max-width: 960px; width: auto; height: 40px; margin: 0 auto; padding: 0; overflow: hidden; }
+.minibanner-red li, .minibanner-white li, .minibanner-gray li, .minibanner-gradient li { list-style: none; }
+.minibanner-red li.nci, .minibanner-white li.nci, .minibanner-gray li.nci, .minibanner-gradient li.nci { width: 258px; height: 40px; float: left; margin-left: 10px; text-indent: -9999px; }
+.minibanner-red li.nci { background: url(../images/minibanner/minibanner-red-nci.gif) no-repeat; }
+.minibanner-white li.nci { background: url(../images/minibanner/minibanner-white-nci.gif) no-repeat; }
+.minibanner-gray li.nci { background: url(../images/minibanner/minibanner-gray-nci.gif) no-repeat; }
+.minibanner-gradient li.nci { background: url(../images/minibanner/minibanner-gradient-nci.gif) no-repeat; }
+.minibanner-red li.nih, .minibanner-white li.nih, .minibanner-gray li.nih, .minibanner-gradient li.nih { width: 203px; height: 40px; float: right; text-indent: -9999px; }
+.minibanner-red li.nih { background: url(../images/minibanner/minibanner-red-nih.gif) no-repeat; }
+.minibanner-white li.nih { background: url(../images/minibanner/minibanner-white-nih.gif) no-repeat; }
+.minibanner-gray li.nih { background: url(../images/minibanner/minibanner-gray-nih.gif) no-repeat; }
+.minibanner-gradient li.nih { background: url(../images/images/minibanner/minibanner-gradient-nih.gif) no-repeat; }
+.minibanner-red li.cancergov, .minibanner-white li.cancergov, .minibanner-gray li.cancergov, .minibanner-gradient li.cancergov { width: 102px; height: 40px; float: right; margin-right: 10px; text-indent: -9999px; }
+.minibanner-red li.cancergov { background: url(../images/minibanner/minibanner-red-cancergov.gif) no-repeat; }
+.minibanner-white li.cancergov { background: url(../images/minibanner/minibanner-white-cancergov.gif) no-repeat; }
+.minibanner-gray li.cancergov { background: url(../images/minibanner/minibanner-gray-cancergov.gif) no-repeat; }
+.minibanner-gradient li.cancergov { background: url(../images/minibanner/minibanner-gradient-cancergov.gif) no-repeat; }
+
+.navbar { border:none !important;}

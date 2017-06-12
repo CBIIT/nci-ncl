@@ -1,0 +1,10 @@
+name = Slider Revolution
+description = Provides a UI that config to displays content as a Slider Revolution. This is an API and requires Slider Revolution Resonsive jquery plugin.
+core = 7.x
+dependencies[] = media
+dependencies[] = field_group
+dependencies[] = jquery_update (>=3.*)
+dependencies[] = behavior_weights
+
+; Information added by developer
+version = "7.x-1.6"

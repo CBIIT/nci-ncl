@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_install()
+ */
+function revslider_install() {
+  $admin_theme = variable_get('admin_theme');
+  $theme_settings = variable_get('theme_' . $admin_theme . '_settings', array());
+  if (version_compare($theme_settings['jquery_update_jquery_version'], '1.7', '<')) {
+    $theme_settings['jquery_update_jquery_version'] = '1.7';
+    variable_set('theme_' . $admin_theme . '_settings', $theme_settings);
+  }
+}
+
+/**
+ * Implements of hook_schema()
+ */
+function revslider_schema() {
+  $schema['revolution_slides'] = array(
+    'description' => 'Revolution slides.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Slideshow ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The title of the slideshow.',
+      ),
+      'uid' => array(
+        'description' => 'User id who created the slideshow.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'description' => 'Data of slides and slide settings.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'Slideshow status.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'created' => array(
+        'description' => 'Unit timestamp when the slideshow created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'Unit timestamp when the slideshow changed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+
+  return $schema;
+}

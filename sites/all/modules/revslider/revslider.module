@@ -1,0 +1,614 @@
+<?php
+
+/**
+ * Implements hook_init()
+ */
+function revslider_init() {
+  $path = drupal_get_path('module', 'revslider');
+
+  drupal_add_js(array(
+    'rs' => array(
+      'global' => array(
+        'url' => file_create_url('public://'),
+        'dir' => base_path() . $path
+      ),
+    )
+  ), 'setting');
+}
+
+/**
+ * Implements hook_library().
+ */
+function revslider_library() {
+  $libraries = array();
+
+  $libraries['revslider'] = array(
+    'title' => 'Slider Revolution',
+    'version' => '4.6',
+    'js' => array(
+      drupal_get_path('module', 'revslider') . '/rs-plugin/js/jquery.themepunch.tools.min.js' => array(),
+      drupal_get_path('module', 'revslider') . '/rs-plugin/js/jquery.themepunch.revolution.min.js' => array(),
+    ),
+    'css' => array(
+      drupal_get_path('module', 'revslider') . '/rs-plugin/css/settings.css' => array(
+        'type' => 'file',
+        'media' => 'screen',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function revslider_menu() {
+  $items = array();
+
+  $items['admin/content/revslider'] = array(
+    'title' => 'Revolution slides',
+    'page callback' => 'revslider_admin_page',
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/content/revslider/add'] = array(
+    'title' => 'Add new slider',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revslider_admin_edit_form'),
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+  );
+
+  $items['admin/content/revslider/import'] = array(
+    'title' => 'Import slider',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revslider_admin_import_form'),
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+  );
+
+  $items['admin/content/revslider/%/edit'] = array(
+    'title' => 'Edit Slide',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revslider_admin_edit_form', 3),
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_INLINE,
+  );
+
+  $items['admin/content/revslider/%/export'] = array(
+    'title' => 'Export slider',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revslider_admin_export_form', 3),
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+  );
+
+  $items['admin/content/revslider/%/delete'] = array(
+    'title' => 'Delete slider',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('revslider_admin_delete_form', 3),
+    'access arguments' => array('administer slider revolution'),
+    'file' => 'revslider.admin.inc',
+  );
+
+  $items['admin/content/revslider/global_settings'] = array(
+    'title' => 'Global Settings',
+    'page callback' => 'revslider_global_settings',
+    'page arguments' => array(3),
+    'access arguments' => array('administer slider revolution'),
+    'delivery callback' => 'ajax_deliver',
+    'file' => 'revslider.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/content/revslider/preview'] = array(
+    'page callback' => 'revslider_preview',
+    'page arguments' => array(3),
+    'access arguments' => array('administer slider revolution'),
+    'delivery callback' => 'ajax_deliver',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission()
+ */
+function revslider_permission() {
+  return array(
+    'administer slider revolution' => array(
+      'title' => t('Administer slider revolution'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function revslider_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'system_theme_settings') {
+    if (empty($form_state['build_info']['args'][0]) || $form_state['build_info']['args'][0] != variable_get('admin_theme') || $form_state['build_info']['args'][0] != variable_get('theme_default')) {
+      return;
+    }
+
+    if(isset($form['jquery_update']['jquery_update_jquery_version'])) {
+      foreach ($form['jquery_update']['jquery_update_jquery_version']['#options'] as $k => $v) {
+        if (version_compare($k, '1.7', '<')) {
+          unset($form['jquery_update']['jquery_update_jquery_version']['#options'][$k]);
+        }
+      }
+
+      if ($form['jquery_update']['jquery_update_jquery_version']['#default_value'] == 'default' || version_compare($form['jquery_update']['jquery_update_jquery_version']['#default_value'], '1.7', '<')) {
+        $form['jquery_update']['jquery_update_jquery_version']['#default_value'] = '1.7';
+      }
+    }
+  } else if ($form_id == 'system_themes_admin_form') {
+    $form['#submit'][] = '_revslider_system_themes_admin_form';
+  }
+}
+
+/**
+ * Alter system themes admin form
+ */
+function _revslider_system_themes_admin_form($form, $form_state) {
+  $admin_theme = $form_state['values']['admin_theme'];
+  $theme_settings = variable_get('theme_' . $admin_theme . '_settings', array());
+  if (version_compare($theme_settings['jquery_update_jquery_version'], '1.7', '<')) {
+    $theme_settings['jquery_update_jquery_version'] = '1.7';
+    variable_set('theme_' . $admin_theme . '_settings', $theme_settings);
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function revslider_block_info() {
+  $blocks = array();
+  $slider = revslider_get_slider();
+
+  if (!empty($slider)) {
+    foreach ($slider as $k => $v) {
+      $blocks[$k]['info'] = t('Slider Revolution '.$v->title);
+      $blocks[$k]['cache'] = DRUPAL_NO_CACHE;
+    }
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function revslider_block_view($delta = '') {
+  module_load_include('php', 'revslider', 'revslider');
+
+  $path = drupal_get_path('module', 'revslider');
+  drupal_add_css($path . '/css/revslider.css');
+  drupal_add_js($path . '/js/revslider.js');
+  drupal_add_library('revslider', 'revslider');
+
+  drupal_add_css($path . '/css/captions.css');
+  drupal_add_css($path . '/css/rs-settings.css');
+
+  $slider = revslider_get_slider($delta);
+  if (!empty($slider)) {
+    $slider = array_shift($slider);
+    // Empty slider
+    $data = drupal_json_decode($slider->data);
+    if (empty($data['slides']['items'])) {
+      return;
+    }
+    if(isset($data['options']['google_fonts']) && !empty($data['options']['google_fonts'])){
+      $fonts = explode('|',$data['options']['google_fonts']);
+      foreach($fonts as $font){
+        drupal_add_css($font,'external');
+      }
+    }
+    if(isset($data['options']['custom_css']) && !empty($data['options']['custom_css'])){
+      drupal_add_css($data['options']['custom_css'],'inline');
+    }
+    //$block['subject'] = t('Slider revolution (@name)', array('@name' => $slider->title));
+    $slider = revslider_prepaire_slider($slider);
+    $block['content'] = array(
+      '#theme' => 'revslider',
+      '#slider' => $slider,
+      '#contextual_links' => array(
+        'edit_link' => array(
+          'admin/content/revslider',
+          array($delta, 'edit'),
+        ),
+      ),
+    );
+    return $block;
+  }
+}
+
+/**
+ * Implements hook_contextual_links_view_alter()
+ *
+ * Add new contextual links
+ */
+function revslider_contextual_links_view_alter(&$element, &$items) {
+    if (isset($element['#element']['#block']) && $element['#element']['#block']->module == "revslider") {
+      $delta = $element['#element']['#block']->delta;
+      $element['#links']['config-menu'] = array(
+          'title' => t('Edit slider'),
+          'href' => url("admin/content/revslider/{$delta}/edit",array('absolute'=>TRUE,'query'=>array('destination'=>current_path()))),
+          'weight' => 100,
+      );
+    }
+}
+
+function revslider_preview(){
+    module_load_include('php', 'revslider', 'revslider');
+    $path = drupal_get_path('module', 'revslider');
+    drupal_add_css($path . '/css/revslider.css');
+    drupal_add_js($path . '/js/revslider.js');
+    drupal_add_library('revslider', 'revslider');
+    drupal_add_css($path . '/css/captions.css');
+    drupal_add_css($path . '/css/rs-settings.css');
+    $data = $_REQUEST['data'];
+    // Empty slider
+    $slider = new stdClass();
+    $slider->title = 'Preview';
+    $slider->id = 99;
+    $slider->data = $data;
+    $data = drupal_json_decode($data);
+    if(isset($data['options']['google_fonts']) && !empty($data['options']['google_fonts'])){
+        $fonts = explode('|',$data['options']['google_fonts']);
+        foreach($fonts as $font){
+            drupal_add_css($font,'external');
+        }
+    }
+    if(isset($data['options']['custom_css']) && !empty($data['options']['custom_css'])){
+        drupal_add_css($data['options']['custom_css'],'inline');
+    }
+    $slider = revslider_prepaire_slider($slider);
+    $block['content'] = array(
+        '#theme' => 'revslider',
+        '#slider' => $slider,
+    );
+    $result = array('#type' => 'ajax');
+    $result['#commands'][] = array(
+        'command' => 'rs_preview',
+        'method' => NULL,
+        'data' => render($block),
+    );
+    return $result;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function revslider_theme() {
+  return array(
+    'revslider' => array(
+      'render element' => 'element',
+    ),
+    'revslider_slide' => array(
+      'render element' => 'element',
+    ),
+    'revslider_layer' => array(
+      'variables' => array('layer' => NULL),
+    ),
+    'revslider_bg' => array(
+      'variables' => array('bg' => NULL),
+    ),
+  );
+}
+
+/**
+ * Theme preprocess function for theme_revslider() and revslider.tpl.php.
+ *
+ * @see theme_revslider()
+ * @see revslider.tpl.php
+ */
+function template_preprocess_revslider(&$variables) {
+  $slider = $variables['element']['#slider'];
+
+  $attrs = $slider->getAttr();
+  $variables['wrapper_classes_array'] = $attrs['wrapper_classes'];
+  $variables['classes_array'] = $attrs['inner_classes'];
+  $variables['attributes_array'] = array();
+
+  $variables['slides'] = array(
+    'id' => $slider->getId(),
+  );
+
+  $slides = $slider->getSlide();
+  $static_layers = $slider->getStaticLayer();
+  $options = $attrs['attributes'];
+
+  // Dumplicate single slide for loop
+  if (count($slides) == 1 && (!isset($options['loopSingleSlide']) || ($options['loopSingleSlide'] == 'true'))) {
+    $slides[] = $slides[0];
+    $options['navigationType'] = "none";
+    $options['navigationArrows'] = "none";
+    $options['navigationStyle'] = "none";
+  }
+  unset($options['custom_css']);
+  unset($options['google_fonts']);
+  $options['timer'] = isset($options['timer'])?$options['timer']:'bottom';
+  $options['hideTimerBar'] = ($options['timer'] == 'none')?'on':'off';
+
+  drupal_add_js(array('rs' => array(
+    'render' => array(
+      array(
+        'id' => $variables['slides']['id'],
+        'options' => $options,
+      ),
+    ),
+  )), 'setting');
+
+  if (!empty($slides)) {
+    foreach($slides as $k => $v) {
+      $variables['slides']['items'][$k] = array(
+        '#theme' => 'revslider_slide',
+        '#slide' => $v
+      );
+    }
+  }
+
+  if ($static_layers !== false && !empty($static_layers)) {
+    foreach($static_layers as $k => $v) {
+      $variables['slides']['static'][$k] = array(
+        '#theme' => 'revslider_layer',
+        '#layer' => $v
+      );
+    }
+  }
+}
+
+/**
+ * Theme process function for theme_revslider()
+ *
+ * @see theme_revslider()
+ */
+function template_process_revslider(&$variables) {
+  $variables['classes'] = implode(' ', $variables['classes_array']);
+  $variables['wrapper_classes'] = implode(' ', $variables['wrapper_classes_array']);
+  $variables['attributes'] = empty($variables['attributes_array']) ? '' : drupal_attributes($variables['attributes_array']);
+}
+
+/**
+ * Returns HTML for a slider revolution.
+ *
+ * This is the default theme implementation to display the slider revolution.
+ * Theme developers who are comfortable with overriding theme functions may do
+ * so in order to customize this markup. This function can be overridden with
+ * varying levels of specificity. For example:
+ * - THEMENAME_revslider()
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - container: A string containing the slider revolution selector for the wrapping div and js render.
+ *
+ * @see template_preprocess_revslider()
+ * @see template_process_revslider()
+ *
+ * @ingroup themeable
+ */
+function theme_revslider($variables) {
+  $output = array();
+
+  $output[] = '<div class="'. $variables['wrapper_classes'] .'">';
+  $output[] = '<div class="'. $variables['classes'] .' banner rs-banner">';
+  $output[] = '<ul>';
+
+  $slides =  $variables['slides'];
+  if (isset($slides['items']) && !empty($slides['items'])) {
+    foreach ($slides['items'] as $slide) {
+      $output[] = drupal_render($slide);
+    }
+  }
+
+  $output[] = '</ul>';
+  $output[] = '<div class="tp-bannertimer"></div>';
+  if (isset($slides['static']) && !empty($slides['static'])) {
+    $output[] = '<div class="tp-static-layers">';
+    foreach ($slides['static'] as $layer) {
+      $output[] = drupal_render($layer);
+    }
+    $output[] = '</div>';
+  }
+
+  $output[] = '  </div>';
+  $output[] = '</div> <!-- End -->';
+
+  return '<div id="rs-wrapper-'. $variables['slides']['id'] .'">'. implode("\n", $output) .'</div>';
+}
+
+/**
+ * Theme preprocess function for theme_revslider_slide() and revslider_slide.tpl.php.
+ *
+ * @see theme_revslider_slide()
+ * @see revslider_slide.tpl.php
+ */
+function template_preprocess_revslider_slide(&$variables) {
+  $slide = $variables['element']['#slide'];
+  $attrs = $slide->getAttr();
+  $attrs['attributes']['data-title'] = $slide->getName();
+  $variables['attributes_array'] = $attrs['attributes'];
+
+  $variables['mainLayer'] = array(
+    '#theme' => 'revslider_bg',
+    '#bg' => $slide->getBg()
+  );
+  $layers = $slide->getLayer();
+  $variables['layers'] = array();
+  if (!empty($layers)) {
+    foreach ($layers as $k => $v) {
+      $variables['layers'][$k] = array(
+        '#theme' => 'revslider_layer',
+        '#layer' => $v
+      );
+    }
+  }
+}
+
+function template_process_revslider_slide(&$variables) {
+  $variables['attributes'] = empty($variables['attributes_array']) ? '' : drupal_attributes($variables['attributes_array']);
+}
+
+/**
+ * * @see template_process_revslider_slide()
+ * @param $variables
+ * @return string
+ */
+function theme_revslider_slide($variables) {
+  $layers = $variables['layers'];
+  $output[] = '<li '. $variables['attributes'] .'>';
+  $output[] = render($variables['mainLayer']);
+  if (!empty($layers)) {
+    foreach ($layers as $layer) {
+      $output[] = drupal_render($layer);
+    }
+  }
+
+  $output[] = '</li>';
+
+  return implode("\n", $output);
+}
+
+
+function template_preprocess_revslider_bg(&$variables) {
+  $bg = $variables['bg'];
+  $attrs = $bg->getAttr();
+  $variables['attributes_array'] = $attrs['attributes'];
+}
+
+function template_process_revslider_bg(&$variables) {
+  $variables['attributes'] = empty($variables['attributes_array']) ? '' : drupal_attributes($variables['attributes_array']);
+}
+
+function theme_revslider_bg($variables) {
+  $output = '';
+  $output .= '<img '. $variables['attributes'] .' />';
+
+  return $output;
+}
+
+function template_preprocess_revslider_layer(&$variables) {
+  $layer = $variables['layer'];
+  $attrs = $layer->getAttr();
+  if($layer->getType() == 'video'){
+    unset($attrs['attributes']['data-end']);
+  }
+  $variables['wrapper_classes_array'] = $attrs['wrapper_classes'];
+  $variables['classes_array'] = isset($attrs['inner_classes']) ? $attrs['inner_classes'] : array();
+  $variables['attributes_array'] = $attrs['attributes'];
+  $variables['loops_array'] = isset($attrs['loops']) ? $attrs['loops'] : array();
+  if(!isset($layer->settings['caption-loop']) || empty($layer->settings['caption-loop'])){
+    $variables['loops_array'] = array();
+  }
+  $variables['type'] = $layer->getType();
+  $variables['conner'] = $layer->renderCorner();
+  $variables['rotation'] = $layer->rotation();
+  $variables['value'] = $layer->getValue();
+  $variables['style'] = isset($attrs['style']) ? implode('; ', $attrs['style']) : '';
+  $variables['innerStyle'] = isset($attrs['innerStyle']) ? implode('; ', $attrs['innerStyle']) : '';
+}
+
+function template_process_revslider_layer(&$variables) {
+  $variables['wrapper_classes'] = implode(' ', $variables['wrapper_classes_array']);
+  $variables['classes'] = implode(' ', $variables['classes_array']).' tp-resizeme';
+  $variables['attributes'] = empty($variables['attributes_array']) ? '' : drupal_attributes($variables['attributes_array']);
+  $variables['loops'] = empty($variables['loops_array']) ? '' : drupal_attributes($variables['loops_array']);
+}
+
+function theme_revslider_layer($variables) {
+  $output = array();
+  switch ($variables['type']) {
+    case 'text':
+      if ($variables['rotation'] == false && $variables['loops'] == '') {
+        $output[] = '<div style="'. $variables['style'] .' '. $variables['innerStyle'] .';" class="'. $variables['classes'] .' '. $variables['wrapper_classes'] .'" '. $variables['attributes'] .'>'. $variables['value'] . $variables['conner'] .'</div>';
+      } else {
+        $output[] = '<div style="'. $variables['style'] .'" class="'. $variables['wrapper_classes'] .'" '. $variables['attributes'] .'><div style="'. $variables['innerStyle'] .' '. $variables['rotation'] .'" class="tp-layer-inner-rotation '. $variables['classes'] .'" '. $variables['loops'] .'>'. $variables['value'] . $variables['conner'] .'</div></div>';
+      }
+      break;
+    case 'image':
+      if ($variables['rotation'] == false && $variables['loops'] == '') {
+        $output[] = '<div style="'. $variables['style'] .';" class="'. $variables['classes'] .' '. $variables['wrapper_classes'] .'" '. $variables['attributes'] .'><img style="'. $variables['innerStyle'] .';" src="'. file_create_url($variables['value']) .'" /></div>';
+      } else {
+        $output[] = '<div style="'. $variables['style'] .';" class="'. $variables['wrapper_classes'] .'" '. $variables['attributes'] .'><div style="'. $variables['rotation'] .';" class="tp-layer-inner-rotation '. $variables['classes'] .'" '. $variables['loops'] .'><img style="'. $variables['innerStyle'] .';" src="'. file_create_url($variables['value']) .'" /></div></div>';
+      }
+      break;
+    case 'video':
+      if ($variables['rotation'] == false) {
+        $output[] = '<div style="'. $variables['style'] .';" class="'. $variables['classes'] .' '. $variables['wrapper_classes'] .'" '. $variables['attributes'] .'></div>';
+      } else {
+        $output[] = '<div  style="'. $variables['style'] .';" class="'. $variables['wrapper_classes'] .' '. $variables['classes'] .'" '. $variables['attributes'] .'></div>';
+      }
+      break;
+  }
+
+  return implode("\n", $output);
+}
+
+/**
+ * Get slideshow by ID(s)
+ *
+ * @param (Array)$id
+ * @return (Array)
+ */
+function revslider_get_slider($ids = NULL) {
+  $select = db_select('revolution_slides', 's')->fields('s');
+  if ($ids) $select->condition('s.id', (array)$ids, 'IN');
+
+  return $select->execute()->fetchAllAssoc('id');
+}
+
+/**
+ * Clear up data for theme render.
+ */
+function revslider_prepaire_slider($slider) {
+  $data = drupal_json_decode($slider->data);
+  $clear_array = array('activeSlide', 'activeLayer', 'newLayer', 'newSlide', 'UI', 'attachBehavior', 'layerType');
+  foreach ($clear_array as $k => $v) {
+    if (isset($data[$v])) unset($data[$v]);
+  }
+
+  $data['id'] = $slider->id;
+  $data['name'] = $slider->title;
+
+  uasort($data['slides']['items'], 'element_sort');
+  foreach ($data['slides']['items'] as $k => $v) {
+    uasort($data['slides']['items'][$k]['layers'], 'element_sort');
+  }
+  $slider = new RS($data);
+  return $slider;
+}
+
+// Insert & update slider
+function revslider_save_slider($values) {
+  global $user;
+  $update_time = time();
+  $fields = array(
+    'title' => $values['title'],
+    'data' => trim($values['data']),
+  );
+
+  if ($values['id']) {
+    $slider = $values['id'];
+    $fields['changed'] = $update_time;
+    db_update('revolution_slides')
+      ->fields($fields)
+      ->condition('id', $slider)
+      ->execute();
+  } else {
+    $fields['uid'] = $user->uid;
+    $fields['created'] = $update_time;
+    $fields['changed'] = $update_time;
+    $slider = db_insert('revolution_slides')
+      ->fields($fields)
+      ->execute();
+  }
+
+  return $slider;
+}

@@ -1,0 +1,33 @@
+﻿/*@media only screen and (max-width: 64.063em) { */
+@media only screen and (max-width: 40.063em) { 
+
+/*.row.full-width.header { height: auto; }
+.left-head-block { margin: 5px 0; }
+.right-head-block-search { display:none; visibility:hidden; }*/
+.right-head-block-menu { margin: 5px 0; position: absolute; }
+main { padding: 10px 0; }
+.main-menu-block { border: none; }
+.not-front .row.full-width.main { position: relative; top: auto; }
+.row.full-width-slider { padding: 0; top: 0; }
+.md-arrow-left, .md-arrow-right { top: 23%; }
+.block.large-6-left {float: left; width:100%; }
+.block.large-6-right {float: right; width:100%; }
+.slogan-banner-block p { font-size: 1.1em; }
+
+} /* max-width 641px, large screens, mobile-only styles, use when QAing mobile issues */
+
+@media only screen and (max-width: 767px) { 
+
+.row.full-width.header { height: auto; }
+.left-head-block { margin: 5px 0; }
+/*.minibar .right-banner-block { display:none; visibility:hidden; }*/
+.minibar .right-banner-block { padding: 10px 10px 0 10px; }
+.right-head-block-menu { margin: 5px 0; position: absolute; }
+.main-menu-block { border-width: 0 !important; }
+
+} /* max-width 641px, large screens, mobile-only styles, use when QAing mobile issues */
+
+@media only screen and (max-width: 64.063em) {
+
+
+} /* max-width 1025px, large screens, mobile-only styles, use when QAing mobile issues */

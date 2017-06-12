@@ -1,0 +1,20 @@
+﻿/* HOMEPAGE SLIDER CSS */
+
+.md-arrow-right {
+    background: url("../images/Right_Arrow.png") no-repeat scroll 0 0;
+    height: 99px;
+    position: absolute;
+    top: 40%;
+    width: 50px;
+    z-index: 3;
+}
+
+.md-arrow-left {
+    background: url("../images/Left_Arrow.png") no-repeat scroll 0 0;
+    height: 99px;
+    position: absolute;
+    top: 40%;
+    width: 50px;
+	margin-left: 1px;
+    z-index: 3;
+}
