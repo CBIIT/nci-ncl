@@ -51,7 +51,7 @@
 <!--<![endif]-->
 
 <head>
-	<script src="//assets.adobedtm.com/f1bfa9f7170c81b1a9a9ecdcc6c5215ee0b03c84/satelliteLib-4b219b82c4737db0e1797b6c511cf10c802c95cb.js"></script>
+    <script src="//assets.adobedtm.com/f1bfa9f7170c81b1a9a9ecdcc6c5215ee0b03c84/satelliteLib-71a449a40c1fe9d8db22f15bc8fd2e3a768e8871.js"></script>
 	<?php print $head; ?>
 	<title>
 		<?php print $head_title; ?>
