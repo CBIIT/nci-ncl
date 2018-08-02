@@ -51,6 +51,16 @@
 <!--<![endif]-->
 
 <head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-101867901-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-101867901-1');
+</script>
+
     <script src="//assets.adobedtm.com/f1bfa9f7170c81b1a9a9ecdcc6c5215ee0b03c84/satelliteLib-5b9e3ac44703470653bb9ed571575dc0232775ef.js"></script>
 	<?php print $head; ?>
 	<title>
@@ -82,24 +92,6 @@
 			$( document ).foundation();
 		} )( jQuery, Drupal, this, this.document );
 	</script>
-
-	<script>
-		( function ( i, s, o, g, r, a, m ) {
-			i[ 'GoogleAnalyticsObject' ] = r;
-			i[ r ] = i[ r ] || function () {
-				( i[ r ].q = i[ r ].q || [] ).push( arguments )
-			}, i[ r ].l = 1 * new Date();
-			a = s.createElement( o ),
-				m = s.getElementsByTagName( o )[ 0 ];
-			a.async = 1;
-			a.src = g;
-			m.parentNode.insertBefore( a, m )
-		} )( window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga' );
-
-		ga( 'create', 'UA-101867901-1', 'auto' );
-		ga( 'send', 'pageview' );
-	</script>
-
 	<script type="text/javascript">
 		_satellite.pageBottom();
 	</script>
